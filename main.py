@@ -12,7 +12,7 @@ NEG_MARK = 0
 
 
 def read_data(corpus_path):
-    with open(f'{corpus_path}', 'r') as f:
+    with open(corpus_path, 'r') as f:
         log.info("Reading file...")
 
         reviews = []
@@ -26,14 +26,18 @@ def read_data(corpus_path):
             reviews.append(dictionary['description'])
 
             recom_author_mark = dictionary['recom_author_mark']
-            if recom_author_mark == 'ДА':
-                marks.append(POS_MARK)
-            elif recom_author_mark == '':
-                marks.append(NEG_MARK)
-            else:
-                raise Exception("Unknown recom_author_mark")
+            marks.append(parse_mark(recom_author_mark))
 
     return reviews, marks
+
+
+def parse_mark(recom_author_mark):
+    if recom_author_mark == 'ДА':
+        return POS_MARK
+    elif recom_author_mark == '':
+        return NEG_MARK
+    else:
+        raise Exception("Unknown recom_author_mark")
 
 
 def split_reviews(reviews, marks, n=500):
@@ -45,7 +49,7 @@ def split_reviews(reviews, marks, n=500):
     for index, review in enumerate(reviews):
         if marks[index] == POS_MARK and len(pos_reviews) < n:
             pos_reviews.append(review)
-        elif len(neg_reviews) < n:
+        elif marks[index] == NEG_MARK and len(neg_reviews) < n:
             neg_reviews.append(review)
 
         if len(pos_reviews) == n and len(neg_reviews) == n:
