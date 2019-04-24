@@ -100,7 +100,6 @@ if __name__ == '__main__':
 
     X_train, X_test, y_train, y_test = train_test_split(pos_reviews + neg_reviews, y_pos + y_neg, test_size=0.2)
 
-    # ToDo Это так работает с tokenizer?
     vectorizer = TfidfVectorizer(max_features=50000, min_df=5, tokenizer=tokenize)
     X_train_vect = vectorizer.fit_transform(X_train)
     X_test_vect = vectorizer.transform(X_test)
