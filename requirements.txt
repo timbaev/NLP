@@ -1,3 +1,5 @@
+gensim
+pymystem3
 nltk
 numpy==1.16.2
 scikit-learn==0.20.3
