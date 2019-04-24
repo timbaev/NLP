@@ -6,9 +6,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import precision_recall_fscore_support
 from nltk.corpus import stopwords
-from nltk.stem.snowball import SnowballStemmer
 from sklearn.linear_model import LogisticRegression
-from nltk.tokenize import word_tokenize
+from sklearn.ensemble import ExtraTreesClassifier
+from pymystem3 import Mystem
 
 CORPUS_PATH = 'data/corpus.txt'
 log = logging.getLogger()
@@ -66,22 +66,44 @@ def split_reviews(reviews, marks, n=500):
 
 def tokenize(document):
     ignore = set(stopwords.words('russian'))
-    stemmer = SnowballStemmer("russian")
+    stem = Mystem()
 
-    tokens = word_tokenize(document, language='russian')
+    tokens = stem.lemmatize(document)
 
     tokens = [w.lower() for w in tokens if w not in ignore]
     tokens = [w for w in tokens if w not in string.punctuation]
-    tokens = [stemmer.stem(w) for w in tokens]
     tokens = [w for w in tokens if w.isalpha()]
 
     return tokens
+
+
+def tokenize_documents(documents):
+    texts = []
+
+    for document in documents:
+        w = tokenize(document)
+        texts.extend(w)
+
+    return texts
 
 
 def print_score_model(model, X_test, y_test):
     y_pred = model.predict(X_test)
     metrics = precision_recall_fscore_support(y_pred=y_pred, y_true=y_test, average='binary', pos_label=POS_MARK)
     log.info(f'Precision: {round(metrics[0], 3)}, recall: {round(metrics[1], 3)}, f-measure: {round(metrics[2], 3)}')
+
+
+def feature_importances(X, Y):
+    model = ExtraTreesClassifier()
+    model.fit(X, Y)
+    return model.feature_importances_
+
+
+def print_most_valuable_features(tokens, tokens_importances, n=100):
+    tokens_importances, tokens = zip(*sorted(zip(tokens_importances, tokens), reverse=True))
+
+    print(tokens[:n])
+    print(tokens_importances[:n])
 
 
 def setup_logger():
@@ -93,7 +115,7 @@ if __name__ == '__main__':
     setup_logger()
 
     reviews, marks = read_data(CORPUS_PATH)
-    pos_reviews, neg_reviews = split_reviews(reviews, marks)
+    pos_reviews, neg_reviews = split_reviews(reviews[:100], marks[:100])
 
     y_pos = [1] * len(pos_reviews)
     y_neg = [0] * len(neg_reviews)
@@ -108,3 +130,6 @@ if __name__ == '__main__':
     model.fit(X_train_vect.toarray(), y_train)
     print_score_model(model, X_test_vect.toarray(), y_test)
 
+    token_importances = feature_importances(X_train_vect.toarray(), y_train)
+
+    print_most_valuable_features(tokenize_documents(X_train), token_importances)
