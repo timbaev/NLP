@@ -210,12 +210,18 @@ if __name__ == '__main__':
     X_train_bow_vectors = np.append(X_train_vect.toarray(), train_avg_vectors, axis=1)
     X_test_bow_vectors = np.append(X_test_vect.toarray(), test_avg_vectors, axis=1)
 
+    model = LogisticRegression(solver="lbfgs")
+    model.fit(X_train_bow_vectors, y_train)
+    print_score_model(model, X_test_bow_vectors, y_test)
+
     # Test Feature word count
     train_sentences = tokenize_documents_append(X_train)
     train_word_counts = [len(tokens) for tokens in train_sentences]
+    train_word_counts = np.reshape(train_word_counts, (-1, 1))
 
     test_sentences = tokenize_documents_append(X_test)
     test_word_counts = [len(tokens) for tokens in test_sentences]
+    test_word_counts = np.reshape(test_word_counts, (-1, 1))
 
     train_matrix = np.append(X_train_vect.toarray(), train_word_counts, axis=1)
     test_matrix = np.append(X_test_vect.toarray(), test_word_counts, axis=1)
@@ -226,7 +232,10 @@ if __name__ == '__main__':
 
     # Test Feature characters count
     train_char_counts = [len(document) for document in X_train]
+    train_char_counts = np.reshape(train_char_counts, (-1, 1))
+
     test_char_counts = [len(document) for document in X_test]
+    test_char_counts = np.reshape(test_char_counts, (-1, 1))
 
     train_matrix = np.append(X_train_vect.toarray(), train_char_counts, axis=1)
     test_matrix = np.append(X_test_vect.toarray(), test_char_counts, axis=1)
@@ -237,7 +246,10 @@ if __name__ == '__main__':
 
     # Test Feature brackets count
     train_bracket_counts = [document.count(')') - document.count('(') for document in X_train]
+    train_bracket_counts = np.reshape(train_bracket_counts, (-1, 1))
+
     test_bracket_counts = [document.count(')') - document.count('(') for document in X_test]
+    test_bracket_counts = np.reshape(test_bracket_counts, (-1, 1))
 
     train_matrix = np.append(X_train_vect.toarray(), train_bracket_counts, axis=1)
     test_matrix = np.append(X_test_vect.toarray(), test_bracket_counts, axis=1)
