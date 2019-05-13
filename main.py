@@ -115,6 +115,12 @@ def feature_importances(X, Y):
     return model.feature_importances_
 
 
+def feature_importances_gridsearch(X, Y):
+    model = GridSearchCV(estimator=ExtraTreesClassifier(), param_grid={})
+    model.fit(X, Y)
+    return model.best_estimator_.feature_importances_
+
+
 def print_most_valuable_features(tokens, tokens_importances, n=100):
     tokens_importances, tokens = zip(*sorted(zip(tokens_importances, tokens), reverse=True))
 
@@ -125,34 +131,6 @@ def print_most_valuable_features(tokens, tokens_importances, n=100):
 def setup_logger():
     logging.basicConfig(format='%(levelname)s - %(asctime)s - %(message)s')
     log.setLevel(logging.INFO)
-
-
-def makeFeatureVec(words, model, num_features):
-    featureVec = np.zeros((num_features,), dtype="float32")
-
-    nwords = 0
-
-    index2word_set = set(model.wv.index2word)
-
-    for word in words:
-        if word in index2word_set:
-            nwords = nwords + 1
-            featureVec = np.add(featureVec, model[word])
-
-    featureVec = np.divide(featureVec, nwords)
-    return featureVec
-
-
-def getAvgFeatureVecs(reviews, model, num_features):
-    counter = 0
-
-    reviewFeatureVecs = np.zeros((len(reviews), num_features), dtype="float32")
-
-    for review in reviews:
-        reviewFeatureVecs[counter] = makeFeatureVec(review, model, num_features)
-        counter = counter + 1
-
-    return reviewFeatureVecs
 
 
 def read_words(filepath):
@@ -266,10 +244,13 @@ if __name__ == '__main__':
 
     fit(X_train_vect.toarray(), y_train, X_test_vect.toarray(), y_test)
 
+    log.info('Features importance:')
     token_importances = feature_importances(X_train_vect.toarray(), y_train)
-    print_most_valuable_features(tokenize_documents_extend(X_train), token_importances)
+    word_arr = tokenize_documents_extend(X_train)
+    print_most_valuable_features(word_arr, token_importances)
 
     # Test Features char ngram
+    log.info('Features char ngram')
     X_train_vect_char_ngram, X_test_vect_char_ngram = get_char_ngram_feature(X_train, X_test)
 
     train_matrix = np.append(X_train_vect.toarray(), X_train_vect_char_ngram.toarray(), axis=1)
@@ -278,6 +259,7 @@ if __name__ == '__main__':
     fit(train_matrix, y_train, test_matrix, y_test)
 
     # Test Features word ngram
+    log.info('Features word ngram')
     X_train_vect_word_ngram, X_test_vect_word_ngram = get_word_ngram_feature(X_train, X_test)
 
     train_matrix = np.append(X_train_vect.toarray(), X_train_vect_word_ngram.toarray(), axis=1)
@@ -286,6 +268,7 @@ if __name__ == '__main__':
     fit(train_matrix, y_train, test_matrix, y_test)
 
     # Test Feature word count
+    log.info('Feature word count')
     train_tokens, test_tokens = get_documents_tokens(X_train, X_test)
 
     train_word_counts, test_word_counts = get_word_count_feature(train_tokens, test_tokens)
@@ -296,6 +279,7 @@ if __name__ == '__main__':
     fit(train_matrix, y_train, test_matrix, y_test)
 
     # Test Feature characters count
+    log.info('Feature characters count')
     train_char_counts, test_char_counts = get_char_count_feature(X_train, X_test)
 
     train_matrix = np.append(X_train_vect.toarray(), train_char_counts, axis=1)
@@ -304,6 +288,7 @@ if __name__ == '__main__':
     fit(train_matrix, y_train, test_matrix, y_test)
 
     # Test Feature brackets count
+    log.info('Feature brackets count')
     train_bracket_counts, test_bracket_counts = get_bracket_count_feature(X_train, X_test)
 
     train_matrix = np.append(X_train_vect.toarray(), train_bracket_counts, axis=1)
@@ -312,6 +297,7 @@ if __name__ == '__main__':
     fit(train_matrix, y_train, test_matrix, y_test)
 
     # Test Feature Sentimental
+    log.info('Feature Sentimental')
     train_sentimental_values, test_sentimental_values = get_sentimental_feature(train_tokens, test_tokens)
 
     train_matrix = np.append(X_train_vect.toarray(), train_sentimental_values, axis=1)
@@ -320,6 +306,7 @@ if __name__ == '__main__':
     fit(train_matrix, y_train, test_matrix, y_test)
 
     # All futures
+    log.info('All futures')
     train_matrix = np.append(X_train_vect.toarray(), X_train_vect_char_ngram.toarray(), axis=1)
     test_matrix = np.append(X_test_vect.toarray(), X_test_vect_char_ngram.toarray(), axis=1)
 
@@ -338,10 +325,6 @@ if __name__ == '__main__':
     fit(train_matrix, y_train, test_matrix, y_test)
 
     # GridSearchCV
-    parameters = {'kernel': ('linear', 'rbf'), 'C': [1, 10]}
-    svc = svm.SVC(gamma="scale")
-    clf = GridSearchCV(svc, parameters, cv=5)
-    clf.fit(train_matrix, y_train)
-    print(clf.best_estimator_.feature_importance())
-
-
+    log.info('GridSearchCV features importance:')
+    token_importances = feature_importances_gridsearch(train_matrix, y_train)
+    print_most_valuable_features(word_arr, token_importances)
